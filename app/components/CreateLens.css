@@ -1,0 +1,17 @@
+h1 {
+  color: #f00;
+}
+
+label span {
+  display: inline-block;
+  width: 70px;
+}
+
+input {
+  margin-left: 10px;
+}
+
+svg {
+  width: 300px;
+  height: 300px;
+}
