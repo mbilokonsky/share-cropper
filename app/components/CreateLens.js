@@ -2,6 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import { Link } from 'react-router';
 import styles from './CreateLens.css';
 import Cropper from './Cropper.js';
+import fs from 'fs';
 
 import electron from 'electron'
 const dialog = electron.remote.dialog;
@@ -15,13 +16,13 @@ class CreateLens extends Component {
     super();
     this.state = {
       lensName: "New Lens",
-      width: 100,
-      height: 100,
+      width: 300,
+      height: 300,
       bgImage: "",
-      x1: 38,
-      y1: 46,
-      x2: 62,
-      y2: 46
+      x1: 114,
+      y1: 138,
+      x2: 186,
+      y2: 138
     }
   }
 
@@ -163,7 +164,9 @@ class CreateLens extends Component {
       <Cropper
         width={300} height={300}
         src={bgImage}
-        save={() => {}}
+        save={(buffer) => {
+          fs.writeFileSync('/Users/mykola/Desktop/test.png', buffer);
+        }}
         skip={() => {}}
         lens={this.state}
       ></Cropper>

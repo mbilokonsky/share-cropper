@@ -1,4 +1,6 @@
 import React, { Component, PropTypes } from 'react';
+import {drawTransformedImage} from '../utils/CanvasUtils.js';
+import canvasBuffer from 'electron-canvas-to-buffer';
 
 const KEYS = {
   BACKSPACE: 8,
@@ -13,6 +15,14 @@ const KEYS = {
   RIGHT: 39,
   UP: 38,
   DOWN: 40
+}
+
+const initialState = {
+  locked: false,
+  translateX: 0,
+  translateY: 0,
+  scale: 1,
+  rotation: 0
 }
 
 class Cropper extends Component {
@@ -46,13 +56,26 @@ class Cropper extends Component {
 
   constructor() {
     super();
-    this.state = {
-      locked: false,
-      translateX: 0,
-      translateY: 0,
-      scale: 1,
-      rotation: 0
+    this.state = initialState;
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.src !== nextProps.src) {
+      this.loadAndDrawImage(nextProps.src);
     }
+  }
+
+  loadAndDrawImage = (src) => {
+    var img = new Image();
+    var context = this.refs.canvas.getContext('2d');
+    let listener = (data) => {
+      this.setState({loadedImage: img});
+      this.setState(initialState);
+      img.removeEventListener('load', listener);
+    }
+
+    img.addEventListener('load', listener);
+    img.src = src;
   }
 
   toggleLock = () => {
@@ -130,12 +153,17 @@ class Cropper extends Component {
 
   }
 
+  saveImage = () => {
+    var buffer = canvasBuffer(this.refs.canvas, 'image/png');
+    this.props.save(buffer);
+  }
+
   keyPressHandler = (e) => {
     switch(e.which) {
       case KEYS.BACKSPACE:
         return this.props.skip();
       case KEYS.ENTER:
-        return this.props.save(this.refs.canvas);
+        return this.saveImage();
       case KEYS.SPACE:
         return this.toggleLock();
       case KEYS.LEFT:
@@ -152,52 +180,27 @@ class Cropper extends Component {
   render() {
     const {width, height, save, skip, src, lens} = this.props;
 
-    let scaleRatio = width / lens.width;
+    if (this.refs.canvas && this.state.loadedImage) {
+      let context = this.refs.canvas.getContext('2d');
+      let transform = {
+        rotation: this.state.rotation,
+        translation: {
+          x: this.state.translateX,
+          y: this.state.translateY
+        },
+        scale: this.state.scale
+      };
 
-    const rotationOrigin = {
-      x: (scaleRatio * lens.x1),
-      y: (scaleRatio * lens.y1)
-    };
+      drawTransformedImage(context, lens, this.state.loadedImage, transform, {width, height}, true);
+    }
 
-    /*
-      translate(-centerX*(factor-1), -centerY*(factor-1))
-    */
-
-    let scaleTransform = `translate(${-rotationOrigin.x * (this.state.scale - 1)}, ${-rotationOrigin.y * (this.state.scale - 1)}) scale(${this.state.scale})`;
-    let rotationTransform = `rotate(${this.state.rotation}, ${rotationOrigin.x}, ${rotationOrigin.y})`;
-    let translationTransform = `translate(${this.state.translateX}, ${this.state.translateY})`;
-
-    let transform = [scaleTransform, rotationTransform, translationTransform].join(' ');
-    return (
-      <svg
+    return (<div>
+      <canvas
         width={width} height={height}
-        onKeyDown={this.keyPressHandler}
         tabIndex="0"
-        ref="canvas">
-        <rect
-          x="0" y="0"
-          width={width} height={height}/>
-
-        <image
-          href={src}
-          x={0} y={0}
-          width={width} height={height}
-          transform={transform}
-          />
-
-        <line
-          x1="0" y1={lens.y1 * scaleRatio}
-          x2={lens.x1 * scaleRatio} y2={lens.y1 * scaleRatio}
-          stroke="red"
-          strokeWidth="3" />
-
-        <line
-          x1={width} y1={lens.y2 * scaleRatio}
-          x2={lens.x2 * scaleRatio} y2={lens.y2 * scaleRatio}
-          stroke="red"
-          strokeWidth="3" />
-
-      </svg>
+        onKeyDown={this.keyPressHandler}
+        ref="canvas" />
+      </div>
     );
   }
 }
