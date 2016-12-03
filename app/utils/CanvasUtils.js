@@ -1,35 +1,31 @@
-function getImagePosition(width, height, widthScale, heightScale) {
-  return (widthScale > heightScale) ? {
-    x: width * .5 * heightScale,
-    y: 0
-  } : {
-    x: 0,
-    y: height * .5 * widthScale
-  }
-}
-
-export function drawTransformedImage(context, lens, imageData, transform, componentDetails, includeLensPoints) {
+export function drawTransformedImage(context, lens, imageData, transform, includeLensPoints) {
   context.resetTransform();
   context.clearRect(0, 0, lens.width, lens.height);
 
-  setRotation(context, transform.rotation, {x: lens.x1, y: lens.y1});
-  setScale(context, transform.scale, {x: lens.x1, y: lens.y1});
+  setRotation(context, transform.rotation, {x: lens.p1.x, y: lens.p1.y});
+  setScale(context, transform.scale, {x: lens.p1.x, y: lens.p1.y});
   setTranslation(context, transform.translation);
 
   // 4: apply final scaling
   let {width, height} = imageData;
-  let widthScale = componentDetails.width / width;
-  let heightScale = componentDetails.height / height;
-  let cropperToLensScale = componentDetails.width / lens.width;
-  let cropperToImageScale = Math.min(widthScale, heightScale);
-  let finalScale = cropperToLensScale * cropperToImageScale;
-  setScale(context, finalScale, {x: 0, y: 0});
+  let widthScale = lens.width / width;
+  let heightScale = lens.height / height;
+  let scaleToUse = Math.min(widthScale, heightScale);
 
-  const position = getImagePosition(componentDetails.width, componentDetails.height, widthScale, heightScale);
+  setScale(context, scaleToUse, {x: 0, y: 0});
+
+  let scaledWidth = width * scaleToUse;
+  let scaledHeight = height * scaleToUse;
+
+  const position = {
+    x: ((lens.width - scaledWidth) / 2) / scaleToUse,
+    y: ((lens.height - scaledHeight) / 2) / scaleToUse
+  };
+
   drawImage(context, imageData, position);
 
   if (includeLensPoints) {
-    drawLensPoints(context, lens, cropperToLensScale)
+    drawLensPoints(context, lens);
   }
 }
 
@@ -53,18 +49,11 @@ function drawImage(context, imageData, position) {
   context.resetTransform();
 }
 
-function drawLensPoints(context, lens, cropperToLensScale) {
+function drawLensPoints(context, lens) {
   context.resetTransform();
 
-  let left = {
-    x: lens.x1 * cropperToLensScale,
-    y: lens.y1 * cropperToLensScale
-  };
-
-  let right = {
-    x: lens.x2 * cropperToLensScale,
-    y: lens.y2 * cropperToLensScale
-  };
+  let left = lens.p1;
+  let right = lens.p2;
 
   context.strokeStyle = "red";
   context.beginPath();

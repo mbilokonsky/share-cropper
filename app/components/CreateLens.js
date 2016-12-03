@@ -1,5 +1,4 @@
 import React, { Component, PropTypes } from 'react';
-import { Link } from 'react-router';
 import styles from './CreateLens.css';
 import Cropper from './Cropper.js';
 import fs from 'fs';
@@ -18,11 +17,17 @@ class CreateLens extends Component {
       lensName: "New Lens",
       width: 300,
       height: 300,
+      p1: {
+        x: 114,
+        y: 138,
+        target: 'left eye'
+      },
+      p2: {
+        x: 186,
+        y: 138,
+        target: 'right eye'
+      },
       bgImage: "",
-      x1: 114,
-      y1: 138,
-      x2: 186,
-      y2: 138
     }
   }
 
@@ -32,56 +37,64 @@ class CreateLens extends Component {
   }
 
   setWidth = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({
-      width: v,
-      x1: parseInt(v * (this.state.x1 / this.state.width)),
-      x2: parseInt(v * (this.state.x2 / this.state.width))
-    });
+    let v = parseInt(e.target.value);
+    if(isNaN(v)) {
+      v = 0;
+    }
+
+    this.setState({width: v});
   }
 
   setHeight = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({
-      height: v,
-      y1: parseInt(v * (this.state.y1 / this.state.height)),
-      y2: parseInt(v * (this.state.y2 / this.state.height))
-    });
+    let v = parseInt(e.target.value);
+    if(isNaN(v)) {
+      v = 0;
+    }
+
+    this.setState({height: v});
   }
 
-  setX1 = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({x1: v});
+  updateP1 = (e) => {
+    let x = parseInt(this.refs.p1x.value);
+    if (isNaN(x)) {
+      x = 0;
+    }
+
+    let y = parseInt(this.refs.p1y.value);
+    if (isNaN(y)) {
+      y = 0;
+    }
+
+    let target = this.refs.p1t.value;
+
+    this.setState({p1: {x, y, target}});
   }
 
-  setY1 = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({y1: v});
-  }
+  updateP2 = (e) => {
+    let x = parseInt(this.refs.p2x.value);
+    if (isNaN(x)) {
+      x = 0;
+    }
 
-  setX2 = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({x2: v});
-  }
+    let y = parseInt(this.refs.p2y.value);
+    if (isNaN(y)) {
+      y = 0;
+    }
 
-  setY2 = (e) => {
-    let v = parseInt(e.target.value || 0);
-    this.setState({y2: v});
+    let target = this.refs.p2t.value;
+
+    this.setState({p2: {x, y, target}});
   }
 
   saveLens = () => {
-    console.log("Now creating a lens out of the following", this.state);
     this.props.saveLens(this.state);
   }
 
   setBG = (filenames) => {
-    console.log("BACKGROUND IMAGE OPENED!");
     this.setState({bgImage: filenames[0]});
   }
 
   loadBackgroundImage = () => {
-    console.log("OPENING BACKGROUND IMAGE!!!");
-
     dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [{
@@ -92,12 +105,12 @@ class CreateLens extends Component {
   }
 
   render() {
-    const { lensName, width, height, bgImage, x1, x2, y1, y2 } = this.state;
+    const { lensName, width, height, bgImage, p1, p2 } = this.state;
 
     var rectWidth = 300;
     var rectRatio = rectWidth / width;
     var rectHeight = height * rectRatio;
-    console.log("bgImage:", bgImage);
+
     return (<div>
       <h1>Create a Lens</h1>
       <label>
@@ -125,37 +138,55 @@ class CreateLens extends Component {
       <br />
       <h3>First Point</h3>
       <label>
+        Target Name:
+        <input type="text"
+        value={p1.target}
+        onChange={this.updateP1}
+        ref="p1t" />
+      </label>
+      <label>
         X:
         <input type="number"
         min="0" max={width}
-        value={x1}
-        onChange={this.setX1}/>
+        value={p1.x}
+        onChange={this.updateP1}
+        ref='p1x'/>
       </label>
 
       <label>
         Y:
         <input type="number"
         min="0" max={height}
-        value={y1}
-        onChange={this.setY1}/>
+        value={p1.y}
+        onChange={this.updateP1}
+        ref='p1y'/>
       </label>
       <br />
 
       <h3>Second Point</h3>
       <label>
+        Target Name:
+        <input type="text"
+        value={p2.target}
+        onChange={this.updateP2}
+        ref="p2t" />
+      </label>
+      <label>
         X:
         <input type="number"
         min="0" max={width}
-        value={x2}
-        onChange={this.setX2}/>
+        value={p2.x}
+        onChange={this.updateP2}
+        ref='p2x'/>
       </label>
 
       <label>
         Y:
         <input type="number"
         min="0" max={height}
-        value={y2}
-        onChange={this.setY2}/>
+        value={p2.y}
+        onChange={this.updateP2}
+        ref='p2y'/>
       </label>
       <br />
       <h3>Example</h3>

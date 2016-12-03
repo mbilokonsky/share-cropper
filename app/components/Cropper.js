@@ -40,16 +40,8 @@ class Cropper extends Component {
         return new Error(`${componentName} received a lens but its width is NaN.`);
       }
 
-      if (lens.width < 10) {
-        return new Error(`${componentName} received a lens whose width is less than 10px, the minumum required.`);
-      }
-
       if (isNaN(lens.height)) {
         return new Error(`${componentName} received a lens but its height is NaN.`);
-      }
-
-      if (lens.height < 10) {
-        return new Error(`${componentName} received a lens whose width is less than 10px, the minumum required.`)
       }
     },
   };
@@ -57,6 +49,10 @@ class Cropper extends Component {
   constructor() {
     super();
     this.state = initialState;
+  }
+
+  componentWillMount() {
+    this.loadAndDrawImage(this.props.src);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -67,7 +63,6 @@ class Cropper extends Component {
 
   loadAndDrawImage = (src) => {
     var img = new Image();
-    var context = this.refs.canvas.getContext('2d');
     let listener = (data) => {
       this.setState({loadedImage: img});
       this.setState(initialState);
@@ -154,6 +149,8 @@ class Cropper extends Component {
   }
 
   saveImage = () => {
+    let context = this.refs.canvas.getContext('2d');
+    drawTransformedImage(context, this.props.lens, this.state.loadedImage, this.getTransform());
     var buffer = canvasBuffer(this.refs.canvas, 'image/png');
     this.props.save(buffer);
   }
@@ -177,26 +174,54 @@ class Cropper extends Component {
     }
   }
 
+  getCanvasStyle = () => {
+    const {width, height, lens} = this.props;
+    let canvasStyle = {
+      backgroundColor: "#eef",
+      position: 'absolute'
+    };
+
+    let widthScale = lens.width / width;
+    let heightScale = lens.height / height;
+    let scaleToUse = Math.max(widthScale, heightScale);
+
+    let scaledHeight = lens.height / scaleToUse;
+    let scaledWidth = lens.width / scaleToUse;
+
+    canvasStyle.width = scaledWidth;
+    canvasStyle.height = scaledHeight;
+    canvasStyle.top = (height - scaledHeight) / 2;
+    canvasStyle.left = (width - scaledWidth) / 2;
+    return canvasStyle;
+  }
+
+  getTransform = () => {
+    return {
+      rotation: this.state.rotation,
+      translation: {
+        x: this.state.translateX,
+        y: this.state.translateY
+      },
+      scale: this.state.scale
+    };
+  }
+
   render() {
     const {width, height, save, skip, src, lens} = this.props;
 
     if (this.refs.canvas && this.state.loadedImage) {
       let context = this.refs.canvas.getContext('2d');
-      let transform = {
-        rotation: this.state.rotation,
-        translation: {
-          x: this.state.translateX,
-          y: this.state.translateY
-        },
-        scale: this.state.scale
-      };
+      let transform = this.getTransform();
 
-      drawTransformedImage(context, lens, this.state.loadedImage, transform, {width, height}, true);
+      drawTransformedImage(context, lens, this.state.loadedImage, transform, true);
     }
 
-    return (<div>
+    let canvasStyle = this.getCanvasStyle();
+
+    return (<div style={{width: width, height: height, backgroundColor: "#330000", position: "relative"}}>
       <canvas
-        width={width} height={height}
+        width={lens.width} height={lens.height}
+        style={canvasStyle}
         tabIndex="0"
         onKeyDown={this.keyPressHandler}
         ref="canvas" />

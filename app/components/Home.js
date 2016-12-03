@@ -8,10 +8,12 @@ export default class Home extends Component {
     return (
       <div>
         <div className={styles.container}>
-          <h2>Home</h2>
-          <Link to="/counter">to Counter</Link>
+          <h2>CREATE DATA</h2>
+          <Link to="/lens">Create New Lens</Link>
           <br />
-          <Link to="/create">to Create New Lens</Link>
+          <Link to='/dataset'>Create Dataset</Link>
+          <br />
+          <Link to='/editDataset'>Process Dataset</Link>
         </div>
       </div>
     );
